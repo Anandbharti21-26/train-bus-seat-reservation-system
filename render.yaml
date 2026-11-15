@@ -1,10 +1,10 @@
 services:
   - type: web
-    name: seat-reservation-backend
+    name: train-bus-seat-reservation-system
     env: node
     plan: free
-    rootDir: backend
-    buildCommand: npm install && npm run build
+    rootDir: .
+    buildCommand: npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:

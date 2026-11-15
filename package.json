@@ -1,5 +1,5 @@
 {
-  "name": "train-bus-seat-reservation-root",
+  "name": "train-bus-seat-reservation-system",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -8,10 +8,10 @@
   },
   "scripts": {
     "install:backend": "npm --prefix backend install",
+    "install:frontend": "npm --prefix frontend install",
     "build:backend": "npm --prefix backend run build",
-    "start:backend": "npm --prefix backend start",
-    "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
-    "build": "npm --prefix backend install && npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && npm --prefix backend install && npm --prefix backend run build",
     "start": "npm --prefix backend start"
   }
 }

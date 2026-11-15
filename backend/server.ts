@@ -304,23 +304,50 @@ app.post('/api/vehicle', (req, res) => {
   res.json(getState());
 });
 
-// Optional: Serve built frontend if available
+// Serve React frontend production files
 const frontendDistCandidates = [
   path.resolve(__dirname, '../../frontend/dist'),
   path.resolve(__dirname, '../frontend/dist'),
   path.resolve(process.cwd(), 'frontend/dist'),
-  path.resolve(process.cwd(), '../frontend/dist')
+  path.resolve(process.cwd(), '../frontend/dist'),
+  path.resolve(process.cwd(), '../../frontend/dist')
 ];
 
-for (const distCandidate of frontendDistCandidates) {
-  if (fs.existsSync(distCandidate) && fs.existsSync(path.join(distCandidate, 'index.html'))) {
-    app.use(express.static(distCandidate));
-    app.get('*', (req, res, next) => {
-      if (req.path.startsWith('/api')) return next();
-      res.sendFile(path.join(distCandidate, 'index.html'));
-    });
-    break;
-  }
+const frontendDist = frontendDistCandidates.find(
+  dir => fs.existsSync(dir) && fs.existsSync(path.join(dir, 'index.html'))
+);
+
+if (frontendDist) {
+  console.log(`[Static] Serving frontend from: ${frontendDist}`);
+  app.use(express.static(frontendDist));
+
+  // Explicit homepage route
+  app.get('/', (_req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+
+  // SPA fallback for all non-API routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+} else {
+  console.warn('[Static] Frontend build directory not found. Checked:', frontendDistCandidates);
+  app.get('/', (_req, res) => {
+    res.status(200).send(`
+      <!DOCTYPE html>
+      <html>
+        <head><title>Train/Bus Seat Reservation</title></head>
+        <body style="font-family: system-ui, sans-serif; padding: 2rem; background: #0f172a; color: #f8fafc;">
+          <h2>Seat Reservation API is Running</h2>
+          <p>Frontend assets are not yet compiled. Run <code>npm run build</code> from repository root.</p>
+          <p><a style="color: #38bdf8;" href="/api/health">Check /api/health</a> | <a style="color: #38bdf8;" href="/api/state">Check /api/state</a></p>
+        </body>
+      </html>
+    `);
+  });
 }
 
 const HOST = '0.0.0.0';
