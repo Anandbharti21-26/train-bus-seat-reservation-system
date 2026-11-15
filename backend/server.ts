@@ -1,7 +1,13 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { db, initializeDatabase, clearData } from './database/database.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 type VehicleMode = 'bus' | 'train';
 type SeatStatus = 'available' | 'reserved' | 'processing';
@@ -10,7 +16,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = Number(process.env.PORT || 3000);
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 let vehicleMode: VehicleMode = 'bus';
 let conflictsPrevented = 0;
@@ -298,6 +304,26 @@ app.post('/api/vehicle', (req, res) => {
   res.json(getState());
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Backend running at http://localhost:${PORT}`);
+// Optional: Serve built frontend if available
+const frontendDistCandidates = [
+  path.resolve(__dirname, '../../frontend/dist'),
+  path.resolve(__dirname, '../frontend/dist'),
+  path.resolve(process.cwd(), 'frontend/dist'),
+  path.resolve(process.cwd(), '../frontend/dist')
+];
+
+for (const distCandidate of frontendDistCandidates) {
+  if (fs.existsSync(distCandidate) && fs.existsSync(path.join(distCandidate, 'index.html'))) {
+    app.use(express.static(distCandidate));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api')) return next();
+      res.sendFile(path.join(distCandidate, 'index.html'));
+    });
+    break;
+  }
+}
+
+const HOST = '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`Backend server listening on http://${HOST}:${PORT}`);
 });

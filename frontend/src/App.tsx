@@ -8,6 +8,9 @@ import { SeatMap, type SelectionTarget } from './components/SeatMap';
 import { StatsStrip } from './components/StatsStrip';
 import type { BookingApiResponse, SystemState, VehicleMode } from './types/reservation';
 
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const apiUrl = (endpoint: string) => `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+
 export default function App() {
   const [systemState, setSystemState] = useState<SystemState | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -34,7 +37,7 @@ export default function App() {
 
   const fetchState = useCallback(async () => {
     try {
-      const res = await fetch('/api/state');
+      const res = await fetch(apiUrl('/api/state'));
       if (!res.ok) throw new Error('Failed to load reservation state');
       const data: SystemState = await res.json();
       setSystemState(data);
@@ -88,7 +91,7 @@ export default function App() {
 
     startLivePolling();
     try {
-      const res = await fetch('/api/book', {
+      const res = await fetch(apiUrl('/api/book'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ passengerName, seatId, simulatedDelayMs: 440 }),
@@ -126,7 +129,7 @@ export default function App() {
     startLivePolling();
 
     try {
-      const reqA = fetch('/api/book', {
+      const reqA = fetch(apiUrl('/api/book'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -139,7 +142,7 @@ export default function App() {
       // Micro-offset of 15ms ensures predictable arrival order while hitting the active critical section concurrently
       const reqB = new Promise<BookingApiResponse>((resolve) => {
         setTimeout(async () => {
-          const r = await fetch('/api/book', {
+          const r = await fetch(apiUrl('/api/book'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -174,7 +177,7 @@ export default function App() {
   const handleCancelBooking = async (bookingId: string) => {
     setCancellingId(bookingId);
     try {
-      const res = await fetch('/api/cancel', {
+      const res = await fetch(apiUrl('/api/cancel'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingId }),
@@ -190,7 +193,7 @@ export default function App() {
   const handleVehicleModeChange = async (mode: VehicleMode) => {
     setSingleFeedback(null);
     setSimultaneousOutcome(null);
-    const res = await fetch('/api/vehicle', {
+    const res = await fetch(apiUrl('/api/vehicle'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode }),
@@ -204,7 +207,7 @@ export default function App() {
   const handleResetDemo = async () => {
     setSingleFeedback(null);
     setSimultaneousOutcome(null);
-    const res = await fetch('/api/reset', {
+    const res = await fetch(apiUrl('/api/reset'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: systemState?.vehicleMode ?? 'bus' }),
